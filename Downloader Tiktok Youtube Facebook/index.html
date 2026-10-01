@@ -1,0 +1,949 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VideoSaver — Download TikTok, YouTube, FB, IG, Twitter, dll</title>
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#0A0A0A">
+<style>
+  /* ===== RESET & BASE ===== */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --red:    #E31C25;
+    --red-dk: #B81019;
+    --black:  #0A0A0A;
+    --white:  #FFFFFF;
+    --gray1:  #F5F5F5;
+    --gray2:  #E8E8E8;
+    --gray3:  #B0B0B0;
+    --gray4:  #666666;
+  }
+
+  body {
+    background: var(--white);
+    color: var(--black);
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  /* ===== TOP BAR ===== */
+  .topbar {
+    width: 100%;
+    background: var(--black);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 14px 24px;
+    gap: 10px;
+  }
+  .topbar-logo {
+    width: 10px; height: 10px;
+    background: var(--red);
+    border-radius: 50%;
+    box-shadow: 15px 0 0 var(--red), 30px 0 0 var(--red);
+  }
+  .topbar-title {
+    color: var(--white);
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-left: 20px;
+    flex-grow: 1;
+  }
+  .topbar-title span { color: var(--red); }
+  
+  .btn-install {
+    background: var(--red);
+    color: var(--white);
+    border: none;
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    text-transform: uppercase;
+  }
+  /* Hide install button when already installed (standalone mode) */
+  @media (display-mode: standalone) {
+    .btn-install { display: none !important; }
+  }
+
+  /* ===== HERO ===== */
+  .hero {
+    width: 100%;
+    background: var(--black);
+    color: var(--white);
+    text-align: center;
+    padding: 52px 24px 44px;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--black), var(--red), var(--black));
+  }
+  .hero h1 {
+    font-size: 36px;
+    font-weight: 800;
+    letter-spacing: -1px;
+    line-height: 1.15;
+    margin-bottom: 10px;
+  }
+  .hero h1 em { color: var(--red); font-style: normal; }
+  .hero p {
+    font-size: 14px;
+    color: var(--gray3);
+    margin-bottom: 22px;
+  }
+  .platform-row {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .platform-pill {
+    border: 1.5px solid rgba(255,255,255,0.25);
+    color: var(--white);
+    border-radius: 100px;
+    padding: 5px 16px;
+    font-size: 12px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    letter-spacing: 0.3px;
+  }
+  .platform-pill .dot {
+    width: 6px; height: 6px;
+    background: var(--red);
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  /* ===== MAIN CARD ===== */
+  .main-card {
+    width: 100%;
+    max-width: 680px;
+    padding: 36px 32px;
+  }
+
+  /* ===== INPUT SECTION ===== */
+  .input-label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--gray4);
+    margin-bottom: 10px;
+    display: block;
+  }
+
+  .input-group {
+    display: flex;
+    gap: 0;
+    border: 2px solid var(--black);
+    border-radius: 6px;
+    overflow: hidden;
+    transition: box-shadow 0.2s;
+  }
+  .input-group:focus-within {
+    box-shadow: 0 0 0 3px rgba(227,28,37,0.15);
+    border-color: var(--red);
+  }
+
+  .url-textarea {
+    flex: 1;
+    border: none;
+    outline: none;
+    padding: 16px 18px;
+    font-size: 14px;
+    font-family: inherit;
+    color: var(--black);
+    background: var(--white);
+    resize: none;
+    min-height: 70px;
+    line-height: 1.6;
+  }
+  .url-textarea::placeholder { color: var(--gray3); }
+
+  .btn-search {
+    background: var(--red);
+    color: var(--white);
+    border: none;
+    padding: 0 24px;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: inherit;
+    min-width: 130px;
+    transition: background 0.18s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    letter-spacing: 0.3px;
+  }
+  .btn-search:hover:not(:disabled) { background: var(--red-dk); }
+  .btn-search:disabled { opacity: 0.55; cursor: not-allowed; }
+
+  .url-hint {
+    margin-top: 8px;
+    font-size: 12px;
+    color: var(--gray4);
+    line-height: 1.5;
+  }
+
+  /* ===== DIVIDER ===== */
+  .section-divider {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 28px 0 24px;
+  }
+  .section-divider hr { flex: 1; border: none; border-top: 1.5px solid var(--gray2); }
+  .section-divider span {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--gray3);
+    white-space: nowrap;
+  }
+
+  /* ===== VIDEO INFO CARD ===== */
+  .video-card {
+    border: 2px solid var(--black);
+    border-radius: 6px;
+    overflow: hidden;
+    display: none;
+  }
+  .video-card-header {
+    background: var(--black);
+    padding: 8px 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .video-card-header .dot { width: 8px; height: 8px; background: var(--red); border-radius: 50%; }
+  .video-card-header span { font-size: 11px; color: var(--gray3); font-weight: 600; letter-spacing: 1px; text-transform: uppercase; }
+  .video-card-body { padding: 16px; display: flex; gap: 14px; }
+
+  .v-thumb {
+    width: 120px; height: 78px;
+    object-fit: cover;
+    border-radius: 3px;
+    border: 1.5px solid var(--gray2);
+    flex-shrink: 0;
+    background: var(--gray1);
+  }
+  .v-thumb-placeholder {
+    width: 120px; height: 78px;
+    border-radius: 3px;
+    border: 1.5px solid var(--gray2);
+    flex-shrink: 0;
+    background: var(--gray1);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; color: var(--gray3);
+  }
+  .v-meta { flex: 1; min-width: 0; }
+  .v-title {
+    font-size: 14px; font-weight: 700; line-height: 1.4;
+    margin-bottom: 8px; word-break: break-word;
+    display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+  }
+  .v-tags { display: flex; gap: 6px; flex-wrap: wrap; }
+  .v-tag {
+    font-size: 11px; font-weight: 600; padding: 2px 10px;
+    border-radius: 100px; border: 1.5px solid var(--gray2);
+    color: var(--gray4); background: var(--gray1);
+  }
+  .v-tag.platform-tag { border-color: var(--red); color: var(--red); background: #fff5f5; }
+
+  /* ===== FORMAT GRID ===== */
+  .format-section { display: none; }
+  .format-label {
+    font-size: 11px; font-weight: 700; letter-spacing: 1.5px;
+    text-transform: uppercase; color: var(--gray4);
+    margin-bottom: 10px; display: block;
+  }
+  .format-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 8px;
+  }
+  .format-btn {
+    border: 2px solid var(--gray2);
+    border-radius: 6px;
+    padding: 12px 14px;
+    background: var(--white);
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.15s;
+    font-family: inherit;
+    position: relative;
+  }
+  .format-btn:hover { border-color: var(--black); background: var(--gray1); }
+  .format-btn.selected {
+    border-color: var(--red);
+    background: #fff5f5;
+  }
+  .format-btn.selected .f-res { color: var(--red); }
+  .format-btn .f-res { font-size: 18px; font-weight: 800; display: block; line-height: 1; margin-bottom: 4px; }
+  .format-btn .f-detail { font-size: 11px; color: var(--gray4); display: block; }
+  .format-btn .f-size { font-size: 10px; color: var(--gray3); display: block; margin-top: 2px; }
+  .format-btn.selected::after {
+    content: '✓';
+    position: absolute; top: 6px; right: 8px;
+    font-size: 12px; color: var(--red); font-weight: 900;
+  }
+
+  /* ===== DOWNLOAD BUTTON ===== */
+  .download-section { display: none; margin-top: 20px; }
+  .btn-download {
+    width: 100%;
+    background: var(--black);
+    color: var(--white);
+    border: 2px solid var(--black);
+    border-radius: 6px;
+    padding: 17px;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: inherit;
+    letter-spacing: 0.5px;
+    transition: all 0.18s;
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+  }
+  .btn-download:hover:not(:disabled) { background: var(--red); border-color: var(--red); }
+  .btn-download:disabled { opacity: 0.5; cursor: not-allowed; background: var(--black); border-color: var(--black); }
+
+  /* ===== STATUS BOX ===== */
+  .status-box {
+    display: none;
+    margin-top: 16px;
+    border: 2px solid var(--black);
+    border-radius: 6px;
+    overflow: hidden;
+  }
+  .status-header {
+    background: var(--black);
+    color: var(--white);
+    padding: 10px 16px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .status-body { padding: 14px 16px; }
+  .progress-track {
+    height: 6px; background: var(--gray2);
+    border-radius: 3px; overflow: hidden; margin-bottom: 10px;
+  }
+  .progress-fill {
+    height: 100%; background: var(--red);
+    border-radius: 3px; width: 0%;
+    transition: width 0.4s ease;
+  }
+  .progress-fill.indeterminate {
+    animation: slide 1.4s ease-in-out infinite;
+    width: 40% !important;
+  }
+  @keyframes slide {
+    0%   { transform: translateX(-100%); }
+    100% { transform: translateX(350%); }
+  }
+  .status-text { font-size: 12px; color: var(--gray4); }
+
+  /* ===== ERROR BOX ===== */
+  .error-box {
+    display: none;
+    margin-top: 16px;
+    border: 2px solid var(--red);
+    border-radius: 6px;
+    padding: 14px 16px;
+    background: #fff5f5;
+  }
+  .error-title { font-size: 13px; font-weight: 700; color: var(--red); margin-bottom: 4px; }
+  .error-msg { font-size: 13px; color: var(--black); line-height: 1.5; }
+
+  /* ===== SUCCESS BOX ===== */
+  .success-box {
+    display: none;
+    margin-top: 16px;
+    border: 2px solid var(--black);
+    border-radius: 6px;
+    padding: 14px 16px;
+    background: var(--gray1);
+  }
+  .success-title { font-size: 13px; font-weight: 700; margin-bottom: 2px; }
+  .success-msg { font-size: 12px; color: var(--gray4); }
+
+  /* ===== FOOTER ===== */
+  .footer {
+    width: 100%; text-align: center;
+    padding: 24px;
+    margin-top: auto;
+    border-top: 1.5px solid var(--gray2);
+    font-size: 12px; color: var(--gray3);
+  }
+  .footer strong { color: var(--black); }
+
+  /* ===== SPINNER ===== */
+  .spin {
+    display: inline-block; width: 14px; height: 14px;
+    border: 2px solid rgba(255,255,255,0.35);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: sp 0.7s linear infinite;
+    flex-shrink: 0;
+  }
+  .spin-dark { border: 2px solid rgba(0,0,0,0.15); border-top-color: var(--black); }
+  @keyframes sp { to { transform: rotate(360deg); } }
+
+  /* ===== LINK INFO & ACCORDION ===== */
+  .link-info {
+    margin-top: 16px;
+    width: 100%;
+    border: 1px solid var(--gray2);
+    border-radius: 6px;
+    overflow: hidden;
+  }
+  .link-info-toggle {
+    width: 100%;
+    background: var(--gray1);
+    border: none;
+    padding: 12px 16px;
+    text-align: left;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--gray4);
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: background 0.2s, color 0.2s;
+  }
+  .link-info-toggle:hover {
+    background: var(--gray2);
+    color: var(--black);
+  }
+  .toggle-arrow {
+    font-size: 10px;
+    transition: transform 0.3s;
+  }
+  .link-info.open .toggle-arrow {
+    transform: rotate(180deg);
+  }
+  .link-info-body {
+    background: var(--white);
+    padding: 0;
+    border-top: 1px solid var(--gray2);
+  }
+  .link-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+  }
+  .link-table th, .link-table td {
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--gray2);
+    text-align: left;
+  }
+  .link-table th {
+    background: #FAFAFA;
+    font-weight: 600;
+    color: var(--gray4);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-size: 10px;
+  }
+  .link-table tr:last-child td { border-bottom: none; }
+  .plat-row td:first-child { border-right: 1px solid var(--gray2); vertical-align: top; }
+  .plat-badge {
+    display: inline-block;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-weight: 700;
+    font-size: 10px;
+    color: var(--white);
+    text-transform: uppercase;
+  }
+  .yt { background: var(--red); color: var(--white); }
+  .tt { background: var(--black); color: var(--white); }
+  .fb { background: var(--black); color: var(--white); }
+  .ig { background: var(--black); color: var(--white); }
+  .tw { background: var(--black); color: var(--white); }
+  .pi { background: var(--red); color: var(--white); }
+  .rd { background: var(--red); color: var(--white); }
+  .tc { background: var(--black); color: var(--white); }
+
+  /* ===== RESPONSIVE ===== */
+  @media (max-width: 520px) {
+    .hero h1 { font-size: 26px; }
+    .main-card { padding: 24px 16px; }
+    .btn-search { min-width: 90px; font-size: 13px; padding: 0 14px; }
+    .format-grid { grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); }
+  }
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <div class="topbar-logo"></div>
+  <div class="topbar-title">Video<span>Saver</span></div>
+</div>
+
+<!-- HERO -->
+<div class="hero">
+  <h1>Download Video<br><em>Tanpa Ribet</em></h1>
+  <p>Mendukung link dari <strong>HP maupun PC</strong> — termasuk link pendek dari share app</p>
+  <div class="platform-row" style="flex-wrap:wrap; justify-content:center; gap:6px;">
+    <div class="platform-pill"><span class="dot"></span>YouTube</div>
+    <div class="platform-pill"><span class="dot"></span>TikTok</div>
+    <div class="platform-pill"><span class="dot"></span>Facebook</div>
+    <div class="platform-pill"><span class="dot"></span>Instagram</div>
+    <div class="platform-pill"><span class="dot"></span>Twitter (X)</div>
+    <div class="platform-pill"><span class="dot"></span>Pinterest</div>
+    <div class="platform-pill"><span class="dot"></span>Reddit</div>
+    <div class="platform-pill"><span class="dot"></span>Twitch</div>
+  </div>
+</div>
+
+<!-- MAIN CARD -->
+<div class="main-card">
+
+  <!-- Install App Banner -->
+  <button id="btnInstall" class="btn-install" style="display:none; width:100%; margin-bottom:20px; padding:12px; font-size:14px; background:var(--black); border-radius:6px; letter-spacing:1px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+    &#11015; INSTALL APLIKASI VIDEOSAVER
+  </button>
+
+  <!-- URL Input -->
+  <label class="input-label" for="urlInput">Link Video</label>
+  <div class="input-group">
+    <textarea
+      id="urlInput"
+      class="url-textarea"
+      placeholder="Tempel link dari YouTube, TikTok, IG, FB, Twitter(X), Pinterest, Reddit, atau Twitch..."
+      rows="2"
+    ></textarea>
+    <button class="btn-search" id="btnSearch" onclick="fetchFormats()">
+      Cari Video
+    </button>
+  </div>
+
+  <!-- Supported links accordion -->
+  <div class="link-info">
+    <button class="link-info-toggle" onclick="toggleLinkInfo(this)">
+      <span>&#9432;</span> Lihat semua format link yang didukung
+      <span class="toggle-arrow">&#9660;</span>
+    </button>
+    <div class="link-info-body" id="linkInfoBody" style="display:none">
+      <table class="link-table">
+        <thead><tr><th>Platform</th><th>Jenis Link</th><th>Contoh</th></tr></thead>
+        <tbody>
+          <tr class="plat-row"><td rowspan="5"><span class="plat-badge yt">YouTube</span></td><td>PC — video biasa</td><td>youtube.com/watch?v=…</td></tr>
+          <tr><td>HP — video biasa</td><td>m.youtube.com/watch?v=…</td></tr>
+          <tr><td>PC/HP — Shorts</td><td>youtube.com/shorts/…</td></tr>
+          <tr><td>Link pendek share</td><td>youtu.be/…</td></tr>
+          <tr><td>YouTube Music</td><td>music.youtube.com/watch?v=…</td></tr>
+
+          <tr class="plat-row"><td rowspan="5"><span class="plat-badge tt">TikTok</span></td><td>PC — video</td><td>tiktok.com/@user/video/123…</td></tr>
+          <tr><td>HP — video</td><td>m.tiktok.com/@user/video/…</td></tr>
+          <tr><td>Link pendek app</td><td>vm.tiktok.com/XXXXX</td></tr>
+          <tr><td>Link pendek baru</td><td>vt.tiktok.com/XXXXX</td></tr>
+          <tr><td>Link share tiktok.com/t</td><td>tiktok.com/t/XXXXX</td></tr>
+
+          <tr class="plat-row"><td rowspan="5"><span class="plat-badge fb">Facebook</span></td><td>PC — watch</td><td>facebook.com/watch?v=…</td></tr>
+          <tr><td>HP — watch</td><td>m.facebook.com/watch?v=…</td></tr>
+          <tr><td>PC/HP — Reels</td><td>facebook.com/reel/…</td></tr>
+          <tr><td>PC/HP — Share baru</td><td>facebook.com/share/v/…</td></tr>
+          <tr><td>Link pendek app</td><td>fb.watch/XXXXX</td></tr>
+
+          <tr class="plat-row"><td rowspan="4"><span class="plat-badge ig">Instagram</span></td><td>PC/HP — Post</td><td>instagram.com/p/…</td></tr>
+          <tr><td>PC/HP — Reels</td><td>instagram.com/reel/…</td></tr>
+          <tr><td>PC/HP — IGTV</td><td>instagram.com/tv/…</td></tr>
+          <tr><td>Link pendek</td><td>instagr.am/p/…</td></tr>
+
+          <tr class="plat-row"><td rowspan="2"><span class="plat-badge tw">Twitter (X)</span></td><td>PC/HP — Status</td><td>twitter.com/user/status/…</td></tr>
+          <tr><td>PC/HP — X Status</td><td>x.com/user/status/…</td></tr>
+
+          <tr class="plat-row"><td rowspan="2"><span class="plat-badge pi">Pinterest</span></td><td>PC/HP — Pin</td><td>pinterest.com/pin/…</td></tr>
+          <tr><td>Link pendek</td><td>pin.it/…</td></tr>
+
+          <tr class="plat-row"><td><span class="plat-badge rd">Reddit</span></td><td>PC/HP — Comments</td><td>reddit.com/r/…/comments/…</td></tr>
+          
+          <tr class="plat-row"><td rowspan="2"><span class="plat-badge tc">Twitch</span></td><td>PC/HP — Video</td><td>twitch.tv/…</td></tr>
+          <tr><td>PC/HP — Clips</td><td>clips.twitch.tv/…</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Error -->
+  <div class="error-box" id="errorBox">
+    <div class="error-title">&#9888; Terjadi Kesalahan</div>
+    <div class="error-msg" id="errorMsg"></div>
+  </div>
+
+  <!-- Video Info -->
+  <div class="video-card" id="videoCard">
+    <div class="video-card-header">
+      <span class="dot"></span>
+      <span>Info Video</span>
+    </div>
+    <div class="video-card-body">
+      <div id="thumbWrap">
+        <div class="v-thumb-placeholder" id="thumbPlaceholder">&#128248;</div>
+        <img class="v-thumb" id="videoThumb" src="" alt="" style="display:none">
+      </div>
+      <div class="v-meta">
+        <div class="v-title" id="videoTitle">—</div>
+        <div class="v-tags">
+          <span class="v-tag" id="durationTag"></span>
+          <span class="v-tag platform-tag" id="platformTag"></span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Format Section -->
+  <div class="format-section" id="formatSection">
+    <div class="section-divider">
+      <hr><span>Pilih Resolusi</span><hr>
+    </div>
+    <div class="format-grid" id="formatGrid"></div>
+  </div>
+
+  <!-- Download Button -->
+  <div class="download-section" id="downloadSection">
+    <button class="btn-download" id="btnDownload" onclick="startDownload()">
+      &#8595; Download Video
+    </button>
+  </div>
+
+  <!-- Status -->
+  <div class="status-box" id="statusBox">
+    <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+      <div class="status-header" style="margin-bottom:0;">
+        <span class="spin" id="statusSpin"></span>
+        <span id="statusTitle">Memproses...</span>
+      </div>
+      <button id="btnCancel" onclick="cancelDownload()" style="display:none; background:none; border:none; color:var(--red); font-weight:bold; font-size:18px; cursor:pointer; line-height:1; padding:0 5px;" title="Batalkan Download">&times;</button>
+    </div>
+    <div class="status-body">
+      <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+      <div class="status-text" id="statusText"></div>
+    </div>
+  </div>
+
+  <!-- Success -->
+  <div class="success-box" id="successBox">
+    <div class="success-title">&#10003; Download Berhasil!</div>
+    <div class="success-msg" id="successMsg">File berhasil diunduh ke folder Downloads Anda.</div>
+  </div>
+
+</div>
+
+<!-- FOOTER -->
+<div class="footer">
+  Didukung oleh <strong>yt-dlp</strong> &mdash; 8 Platform Utama Didukung &mdash;
+  File tersimpan di folder <strong>downloads/</strong>
+</div>
+
+<script>
+  let videoUrl = '';
+  let selectedFmt = null;
+  let allFormats = [];
+
+  const $ = id => document.getElementById(id);
+
+  function toggleLinkInfo(btn) {
+    const info = btn.parentElement;
+    const body = $('linkInfoBody');
+    if (body.style.display === 'none') {
+      body.style.display = 'block';
+      info.classList.add('open');
+    } else {
+      body.style.display = 'none';
+      info.classList.remove('open');
+    }
+  }
+
+  function hide(...ids) { ids.forEach(id => $(id).style.display = 'none'); }
+  function show(id, display='block') { $(id).style.display = display; }
+
+  function setError(msg) {
+    $('errorMsg').textContent = msg;
+    show('errorBox');
+    hide('statusBox', 'successBox');
+  }
+  function clearError() { hide('errorBox'); }
+
+  function setStatus(title, text, indeterminate=true) {
+    $('statusTitle').textContent = title;
+    $('statusText').textContent = text;
+    const fill = $('progressFill');
+    if (indeterminate) {
+      fill.classList.add('indeterminate');
+      fill.style.width = '40%';
+    } else {
+      fill.classList.remove('indeterminate');
+    }
+    show('statusBox');
+  }
+  function clearStatus() { hide('statusBox'); }
+
+  function setProgress(pct) {
+    const fill = $('progressFill');
+    fill.classList.remove('indeterminate');
+    fill.style.width = pct + '%';
+  }
+
+  function platformLabel(p) {
+    const map = { 
+      youtube:'YouTube', tiktok:'TikTok', facebook:'Facebook', instagram:'Instagram',
+      twitter:'Twitter (X)', pinterest:'Pinterest', reddit:'Reddit', twitch:'Twitch'
+    };
+    return map[p] || p.toUpperCase();
+  }
+
+  async function fetchFormats() {
+    const url = $('urlInput').value.trim();
+    if (!url) { setError('Mohon masukkan link video terlebih dahulu.'); return; }
+
+    videoUrl = url;
+    clearError();
+    clearStatus();
+    hide('videoCard','formatSection','downloadSection','successBox');
+    selectedFmt = null;
+
+    const btn = $('btnSearch');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spin"></span> Mencari...';
+
+    setStatus('Mengambil informasi video...', 'Harap tunggu, sedang membaca data dari platform...');
+
+    try {
+      const res = await fetch('/get_formats', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url })
+      });
+      const data = await res.json();
+      clearStatus();
+
+      if (!res.ok || data.error) { setError(data.error || 'Gagal mengambil info video.'); return; }
+
+      // Clear input untuk memudahkan paste link selanjutnya
+      $('urlInput').value = '';
+
+      // Fill video card
+      $('videoTitle').textContent = data.title || '(Tanpa Judul)';
+      $('durationTag').textContent = data.duration !== 'N/A' ? '⏱ ' + data.duration : '';
+      $('platformTag').textContent = platformLabel(data.platform);
+
+      if (data.thumbnail) {
+        const img = $('videoThumb');
+        img.src = data.thumbnail;
+        img.style.display = 'block';
+        $('thumbPlaceholder').style.display = 'none';
+        img.onerror = () => { img.style.display = 'none'; $('thumbPlaceholder').style.display = 'flex'; };
+      }
+      show('videoCard');
+
+      // Fill formats
+      allFormats = data.formats;
+      const grid = $('formatGrid');
+      grid.innerHTML = '';
+
+      allFormats.forEach((fmt, i) => {
+        const btn = document.createElement('button');
+        btn.className = 'format-btn';
+        btn.dataset.i = i;
+        let sizeStr = '';
+        if (fmt.filesize > 0) {
+          const mb = (fmt.filesize / 1048576).toFixed(1);
+          sizeStr = mb + ' MB';
+        }
+        btn.innerHTML =
+          `<span class="f-res">${fmt.label}</span>` +
+          `<span class="f-detail">${fmt.detail}</span>` +
+          `<span class="f-size">${sizeStr}</span>`;
+        btn.onclick = () => {
+          document.querySelectorAll('.format-btn').forEach(b => b.classList.remove('selected'));
+          btn.classList.add('selected');
+          selectedFmt = allFormats[i];
+          show('downloadSection');
+          $('btnDownload').innerHTML = '&#8595; Download &nbsp;<span style="font-weight:400;font-size:13px;opacity:0.75">' + fmt.label + ' · ' + fmt.detail + '</span>';
+        };
+        grid.appendChild(btn);
+      });
+
+      show('formatSection');
+
+    } catch (err) {
+      clearStatus();
+      setError('Tidak dapat terhubung ke server. Pastikan aplikasi berjalan.');
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = 'Cari Video';
+    }
+  }
+
+  let activeTaskId = null;
+  let progressInterval = null;
+
+  async function cancelDownload() {
+    if (!activeTaskId) return;
+    setStatus('Membatalkan...', 'Menghapus file yang belum selesai...', true);
+    $('btnCancel').style.display = 'none';
+    try {
+      await fetch('/cancel/' + activeTaskId, { method: 'POST' });
+    } catch (e) {}
+  }
+
+  async function startDownload() {
+    if (!selectedFmt) { setError('Pilih resolusi terlebih dahulu.'); return; }
+    clearError();
+    hide('successBox');
+
+    const btn = $('btnDownload');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spin"></span> Menyiapkan...';
+
+    $('btnCancel').style.display = 'block';
+    setStatus('Menyiapkan Download', 'Menghubungkan ke server...', false);
+    setProgress(0);
+
+    try {
+      const res = await fetch('/start_download', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: videoUrl, format_id: selectedFmt.format_id, type: selectedFmt.type })
+      });
+      const data = await res.json();
+      if (!res.ok || data.error) throw new Error(data.error || 'Gagal memulai download');
+
+      activeTaskId = data.task_id;
+      btn.innerHTML = '<span class="spin"></span> Mendownload...';
+      
+      progressInterval = setInterval(pollProgress, 1000);
+
+    } catch (err) {
+      setError(err.message);
+      clearStatus();
+      btn.disabled = false;
+      btn.innerHTML = '&#8595; Download Video';
+      $('btnCancel').style.display = 'none';
+    }
+  }
+
+  async function pollProgress() {
+    if (!activeTaskId) return;
+    try {
+      const res = await fetch('/status/' + activeTaskId);
+      const data = await res.json();
+
+      if (data.status === 'downloading') {
+        setStatus('Sedang Mendownload', data.progress + (data.eta ? ' (Sisa waktu: ' + data.eta + ')' : ''), false);
+        let pct = parseFloat(data.progress);
+        if (!isNaN(pct)) setProgress(pct);
+      } 
+      else if (data.status === 'finished') {
+        clearInterval(progressInterval);
+        const tid = activeTaskId;
+        activeTaskId = null;
+        
+        $('btnCancel').style.display = 'none';
+        setStatus('Selesai!', 'Download telah selesai 100%.', false);
+        setProgress(100);
+        
+        $('btnDownload').innerHTML = '&#8595; Download Video';
+        $('btnDownload').disabled = false;
+        
+        // Trigger download file
+        window.location.href = '/file/' + tid;
+        
+        setTimeout(() => {
+          clearStatus();
+          $('successMsg').textContent = `File berhasil diunduh ke folder Downloads Anda.`;
+          show('successBox');
+        }, 2000);
+      }
+      else if (data.status === 'error') {
+        clearInterval(progressInterval);
+        activeTaskId = null;
+        setError(data.error || 'Terjadi kesalahan saat mendownload.');
+        $('btnDownload').innerHTML = '&#8595; Download Video';
+        $('btnDownload').disabled = false;
+        $('btnCancel').style.display = 'none';
+      }
+      else if (data.status === 'cancelled') {
+        clearInterval(progressInterval);
+        activeTaskId = null;
+        clearStatus();
+        setError('Download dibatalkan oleh pengguna.');
+        $('btnDownload').innerHTML = '&#8595; Download Video';
+        $('btnDownload').disabled = false;
+        $('btnCancel').style.display = 'none';
+      }
+    } catch (e) {
+      // Ignore network errors in polling
+    }
+  }
+
+  $('urlInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); fetchFormats(); }
+  });
+  $('urlInput').addEventListener('paste', () => {
+    setTimeout(() => {
+      if ($('urlInput').value.trim()) {
+        $('btnSearch').style.background = 'var(--red-dk)';
+        setTimeout(() => $('btnSearch').style.background = '', 300);
+      }
+    }, 50);
+  });
+
+  /* PWA Installation Logic */
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/sw.js').then(() => {
+      console.log('Service Worker Registered');
+    });
+  }
+
+  let deferredPrompt;
+  const btnInstall = document.getElementById('btnInstall');
+
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    // Tampilkan tombol install jika ada event instalasi (artinya sedang di web, bukan standalone)
+    btnInstall.style.display = 'block';
+  });
+
+  btnInstall.addEventListener('click', async () => {
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      if (outcome === 'accepted') {
+        btnInstall.style.display = 'none';
+      }
+      deferredPrompt = null;
+    }
+  });
+  window.addEventListener('appinstalled', () => {
+    btnInstall.style.display = 'none';
+  });
+</script>
+</body>
+</html>
